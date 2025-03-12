@@ -38,7 +38,8 @@
 			"suspicious": {
 				"noDebugger": "off",
 				"noConsoleLog": "off",
-				"noAssignInExpressions": "off"
+				"noAssignInExpressions": "off",
+				"noExplicitAny": "off"
 			},
 			"style": {
 				"noShoutyConstants": "off",
