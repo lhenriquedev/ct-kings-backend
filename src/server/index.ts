@@ -2,36 +2,18 @@ import 'dotenv/config'
 
 import fastify from 'fastify'
 
-import { SignInController } from '../application/controllers/sign-in-controller'
-import { SignUpController } from '../application/controllers/sign-up-controller'
-import { SignInUseCase } from '../application/use-case/sign-in-use-case'
-import { SignUpUseCase } from '../application/use-case/sign-up-use-case'
+import { auth } from '../application/middlewares/auth'
+import { makeListUsersControllers } from '../factories/make-list-users.controller'
+import { makeSignInController } from '../factories/make-sign-in-controller'
+import { makeSignUpController } from '../factories/make-sign-up-controller'
+import { routeAdapter } from './adapters/routeAdapter'
 
 const app = fastify()
 
-app.post('/sign-up', async (request, reply) => {
-	const SALT = 10
+app.post('/sign-up', routeAdapter(makeSignUpController()))
+app.post('/sign-in', routeAdapter(makeSignInController()))
 
-	const signUpUseCase = new SignUpUseCase(SALT)
-	const signUpController = new SignUpController(signUpUseCase)
-
-	const { body, statusCode } = await signUpController.handle({
-		body: request.body as Record<string, any>,
-	})
-
-	return reply.status(statusCode).send(body)
-})
-
-app.post('/sign-in', async (request, reply) => {
-	const signInUseCase = new SignInUseCase()
-	const signInController = new SignInController(signInUseCase)
-
-	const { body, statusCode } = await signInController.handle({
-		body: request.body as Record<string, any>,
-	})
-
-	return reply.status(statusCode).send(body)
-})
+app.get('/users', { preHandler: auth }, routeAdapter(makeListUsersControllers()))
 
 app
 	.listen({
