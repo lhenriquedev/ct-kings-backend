@@ -9,6 +9,8 @@ interface IInput {
 }
 
 export class SignUpUseCase {
+	constructor(private readonly salt: number) {}
+
 	async execute({ email, name, password }: IInput): Promise<void> {
 		const accountAlreadyExists = await prismaClient.account.findUnique({
 			where: { email },
@@ -16,7 +18,7 @@ export class SignUpUseCase {
 
 		if (accountAlreadyExists) throw new AccountAlreadyExists()
 
-		const hashedPassword = await hash(password, 10)
+		const hashedPassword = await hash(password, this.salt)
 
 		await prismaClient.account.create({
 			data: {

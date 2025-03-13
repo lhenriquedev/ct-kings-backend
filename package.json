@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server/index.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
