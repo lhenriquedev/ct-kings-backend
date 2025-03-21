@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,11 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
-  id       String @id @default(uuid()) @db.Uuid
-  name     String
-  email    String @unique
-  password String
+enum Role {
+  ADMIN
+  USER
+  INSTRUCTOR
 
-  @@map("accounts")
+  @@map("role")
+}
+
+enum Belt {
+  BRANCA
+  AZUL
+  ROXA
+  MARROM
+  PRETA
+}
+
+model User {
+  id         String  @id @default(uuid())
+  name       String
+  email      String  @unique
+  password   String
+  belt       Belt?   @default(BRANCA)
+  is_blocked Boolean @default(false)
+
+  role Role
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  classes  Class[]
+  checkIns CheckIn[]
+
+  @@map("users")
+}
+
+model Class {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  date        DateTime
+  start_time  DateTime
+  end_time    DateTime
+
+  instructor_id String
+  instructor    User   @relation(fields: [instructor_id], references: [id])
+
+  checkIns CheckIn[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("classes")
+}
+
+model CheckIn {
+  id            String    @id @default(uuid())
+  user_id       String
+  class_id      String
+  checked_in    Boolean   @default(false)
+  checked_in_at DateTime? @default(now())
+
+  user  User  @relation(fields: [user_id], references: [id])
+  class Class @relation(fields: [class_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("check_ins")
 }

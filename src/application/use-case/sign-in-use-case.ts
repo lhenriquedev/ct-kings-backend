@@ -2,7 +2,7 @@ import { compare } from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
 import { env } from '../config/env'
 import { InvalidCredentials } from '../errors/invalid-credentials'
-import { prismaClient } from '../libs/prisma-client'
+import type { IUsersRepository } from '../repositories/interfaces/i-users-repository'
 
 interface IInput {
 	email: string
@@ -14,18 +14,20 @@ interface IOutput {
 }
 
 export class SignInUseCase {
+	constructor(private readonly usersRepository: IUsersRepository) {}
+
 	async execute({ email, password }: IInput): Promise<IOutput> {
-		const account = await prismaClient.account.findUnique({
-			where: { email },
-		})
+		const user = await this.usersRepository.findByEmail(email)
 
-		if (!account) throw new InvalidCredentials()
+		if (!user) throw new InvalidCredentials()
 
-		const isPasswordValid = await compare(password, account.password)
+		const isPasswordValid = await compare(password, user.password)
 
 		if (!isPasswordValid) throw new InvalidCredentials()
 
-		const accessToken = sign({ sub: account.id }, env.jwtSecret, { expiresIn: '1d' })
+		const accessToken = sign({ sub: user.id, role: user.role }, env.jwtSecret, {
+			expiresIn: '1d',
+		})
 
 		return {
 			accessToken,

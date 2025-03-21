@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "belt" DROP NOT NULL,
+ALTER COLUMN "belt" SET DEFAULT 'BRANCA';

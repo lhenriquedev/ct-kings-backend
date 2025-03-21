@@ -2,24 +2,31 @@ import 'dotenv/config'
 
 import fastify from 'fastify'
 
-import { auth } from '../application/middlewares/auth'
-import { makeListUsersControllers } from '../factories/make-list-users.controller'
-import { makeSignInController } from '../factories/make-sign-in-controller'
-import { makeSignUpController } from '../factories/make-sign-up-controller'
-import { routeAdapter } from './adapters/routeAdapter'
+import { ZodError } from 'zod'
+import { routes } from '../application/routes'
 
 const app = fastify()
 
-app.post('/sign-up', routeAdapter(makeSignUpController()))
-app.post('/sign-in', routeAdapter(makeSignInController()))
+app.register(routes)
 
-app.get('/users', { preHandler: auth }, routeAdapter(makeListUsersControllers()))
+app.setErrorHandler((error, request, reply) => {
+	if (error instanceof ZodError) {
+		return reply.status(400).send({ message: 'Validation error', issues: error.format() })
+	}
 
-app
-	.listen({
-		host: '0.0.0.0',
-		port: 3001,
-	})
-	.then(() => {
+	return reply.status(500).send({ message: 'Internal server error' })
+
+	// TODO: Use external tool like Sentry DataDog or NewRelic to track errors
+})
+
+async function start() {
+	try {
+		await app.listen({ host: '0.0.0.0', port: 3001 })
 		console.log('🚀 HTTP server running on http://localhost:3001')
-	})
+	} catch (error) {
+		console.error(error)
+		process.exit(1)
+	}
+}
+
+start()

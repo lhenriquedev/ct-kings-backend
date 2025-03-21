@@ -1,0 +1,47 @@
+import { ZodError, z } from 'zod'
+import type { IController, IRequest, IResponse } from '../../interfaces/i-controller'
+import type { CreateClassUseCase } from '../../use-case/create-class-use-case'
+
+const schema = z.object({
+	name: z.string().min(1),
+	description: z.string().min(1),
+	date: z.string().min(1),
+	instructor_id: z.string().min(1),
+	start_time: z.string().min(1),
+	end_time: z.string().min(1),
+})
+
+export class CreateClassController implements IController {
+	constructor(private readonly createClassUseCase: CreateClassUseCase) {}
+
+	async handle(request: IRequest): Promise<IResponse> {
+		try {
+			const { name, description, date, instructor_id, start_time, end_time } = schema.parse(
+				request.body,
+			)
+
+			const { class: singleClass } = await this.createClassUseCase.execute({
+				name,
+				description,
+				date,
+				instructor_id,
+				start_time,
+				end_time,
+			})
+
+			return {
+				statusCode: 201,
+				body: singleClass,
+			}
+		} catch (error) {
+			if (error instanceof ZodError) {
+				return {
+					statusCode: 400,
+					body: error.issues,
+				}
+			}
+
+			throw error
+		}
+	}
+}
