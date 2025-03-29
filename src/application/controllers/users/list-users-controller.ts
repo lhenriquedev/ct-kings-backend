@@ -1,15 +1,12 @@
-import type { IController, IResponse } from '../../interfaces/i-controller'
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { UsersRepository } from '../../repositories/users-repository'
 
-export class ListUsersController implements IController {
+export class ListUsersController {
 	constructor(private readonly usersRepo: UsersRepository) {}
 
-	async handle(): Promise<IResponse> {
-		const users = await this.usersRepo.findAll()
+	async handle(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+		const users = await this.usersRepo.findMany(1)
 
-		return {
-			statusCode: 200,
-			body: { users },
-		}
+		return reply.status(200).send({ users })
 	}
 }

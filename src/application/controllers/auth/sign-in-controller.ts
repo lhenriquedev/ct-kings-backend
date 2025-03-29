@@ -1,6 +1,6 @@
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import { ZodError, z } from 'zod'
 import { InvalidCredentials } from '../../errors/invalid-credentials'
-import type { IController, IRequest, IResponse } from '../../interfaces/i-controller'
 import type { SignInUseCase } from '../../use-case/sign-in-use-case'
 
 const schema = z.object({
@@ -8,34 +8,23 @@ const schema = z.object({
 	password: z.string().min(8),
 })
 
-export class SignInController implements IController {
+export class SignInController {
 	constructor(private readonly signInUseCase: SignInUseCase) {}
 
-	async handle({ body }: IRequest): Promise<IResponse> {
+	async handle(request: FastifyRequest, reply: FastifyReply): Promise<void> {
 		try {
-			const { email, password } = schema.parse(body)
+			const { email, password } = schema.parse(request.body)
 
 			const { accessToken } = await this.signInUseCase.execute({ email, password })
 
-			return {
-				statusCode: 200,
-				body: { accessToken },
-			}
+			return reply.status(200).send({ accessToken })
 		} catch (error) {
 			if (error instanceof ZodError) {
-				return {
-					statusCode: 400,
-					body: error.issues,
-				}
+				return reply.status(400).send({ message: 'Validation error', issues: error.issues })
 			}
 
 			if (error instanceof InvalidCredentials) {
-				return {
-					statusCode: 401,
-					body: {
-						error: 'Invalid credentials',
-					},
-				}
+				return reply.status(401).send({ message: 'Invalid credentials' })
 			}
 
 			throw error

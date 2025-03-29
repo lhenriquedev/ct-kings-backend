@@ -1,5 +1,5 @@
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import { ZodError, z } from 'zod'
-import type { IController, IRequest, IResponse } from '../../interfaces/i-controller'
 import type { CreateClassUseCase } from '../../use-case/create-class-use-case'
 
 const schema = z.object({
@@ -11,10 +11,10 @@ const schema = z.object({
 	end_time: z.string().min(1),
 })
 
-export class CreateClassController implements IController {
+export class CreateClassController {
 	constructor(private readonly createClassUseCase: CreateClassUseCase) {}
 
-	async handle(request: IRequest): Promise<IResponse> {
+	async handle(request: FastifyRequest, reply: FastifyReply): Promise<void> {
 		try {
 			const { name, description, date, instructor_id, start_time, end_time } = schema.parse(
 				request.body,
@@ -29,16 +29,10 @@ export class CreateClassController implements IController {
 				end_time,
 			})
 
-			return {
-				statusCode: 201,
-				body: singleClass,
-			}
+			return reply.status(201).send(singleClass)
 		} catch (error) {
 			if (error instanceof ZodError) {
-				return {
-					statusCode: 400,
-					body: error.issues,
-				}
+				return reply.status(400).send(error.issues)
 			}
 
 			throw error

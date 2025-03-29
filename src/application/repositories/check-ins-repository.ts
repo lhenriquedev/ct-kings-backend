@@ -1,4 +1,5 @@
 import type { CheckIn, Prisma } from '@prisma/client'
+import dayjs from 'dayjs'
 import { prismaClient } from '../libs/prisma-client'
 import type { ICheckInsRepository } from './interfaces/i-check-ins-repository'
 
@@ -20,14 +21,21 @@ export class CheckInsRepository implements ICheckInsRepository {
 		return checkIns
 	}
 
-	async countByUserId(userId: string) {
-		const count = await prismaClient.checkIn.count({
+	async findByUserOnDate(userId: string, date: Date) {
+		const startOfTheDay = dayjs(date).startOf('date')
+		const endOfTheDay = dayjs(date).endOf('date')
+
+		const checkIn = await prismaClient.checkIn.findFirst({
 			where: {
 				user_id: userId,
+				created_at: {
+					gte: startOfTheDay.toDate(),
+					lte: endOfTheDay.toDate(),
+				},
 			},
 		})
 
-		return count
+		return checkIn
 	}
 
 	async findById(checkInId: string) {
@@ -36,6 +44,16 @@ export class CheckInsRepository implements ICheckInsRepository {
 		})
 
 		return checkIn
+	}
+
+	async countByUserId(userId: string) {
+		const count = await prismaClient.checkIn.count({
+			where: {
+				user_id: userId,
+			},
+		})
+
+		return count
 	}
 
 	async save(data: CheckIn) {

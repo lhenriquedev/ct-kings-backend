@@ -14,6 +14,7 @@ app.setErrorHandler((error, request, reply) => {
 		return reply.status(400).send({ message: 'Validation error', issues: error.format() })
 	}
 
+	console.error(error)
 	return reply.status(500).send({ message: 'Internal server error' })
 
 	// TODO: Use external tool like Sentry DataDog or NewRelic to track errors

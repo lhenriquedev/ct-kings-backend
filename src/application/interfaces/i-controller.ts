@@ -1,14 +1,5 @@
-export interface IRequest {
-	body: Record<string, any>
-	params: Record<string, string>
-	userId: string | undefined
-}
-
-export interface IResponse {
-	statusCode: number
-	body: Record<string, any> | null
-}
+import type { FastifyReply, FastifyRequest } from 'fastify'
 
 export interface IController {
-	handle(request: IRequest): Promise<IResponse>
+	handle(request: FastifyRequest, reply: FastifyReply): Promise<void>
 }
