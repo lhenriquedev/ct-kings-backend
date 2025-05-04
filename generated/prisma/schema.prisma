@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          UserRole @default(STUDENT)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  modalities     UserModality[]
+  belt_ranks     BeltRank[]
+  taught_classes Class[]           @relation("Instructor")
+  check_ins      CheckIn[]
+  progress       StudentProgress[]
+
+  @@map("users")
+}
+
+model Modality {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  users      UserModality[]
+  belt_ranks BeltRank[]
+  classes    Class[]
+
+  @@map("modalities")
+}
+
+model UserModality {
+  id          String   @id @default(uuid())
+  user_id     String
+  modality_id String
+  created_at  DateTime @default(now())
+
+  // Relations
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  modality Modality @relation(fields: [modality_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, modality_id])
+  @@map("user_modalities")
+}
+
+model BeltRank {
+  id               String   @id @default(uuid())
+  name             String
+  color            String
+  order            Int // For sorting (white=1, blue=2, purple=3, etc.)
+  modality_id      String
+  required_classes Int      @default(40) // Number of classes needed to advance to next belt
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  modality Modality          @relation(fields: [modality_id], references: [id], onDelete: Cascade)
+  users    User[]
+  progress StudentProgress[]
+
+  @@unique([modality_id, order])
+  @@map("belt_ranks")
+}
+
+model Class {
+  id            String   @id @default(uuid())
+  title         String
+  description   String?
+  start_time    DateTime
+  end_time      DateTime
+  instructor_id String
+  modality_id   String
+  max_students  Int?
+  is_recurring  Boolean  @default(false)
+  recurrence_id String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  instructor User             @relation("Instructor", fields: [instructor_id], references: [id], onDelete: Restrict)
+  modality   Modality         @relation(fields: [modality_id], references: [id], onDelete: Restrict)
+  recurrence ClassRecurrence? @relation(fields: [recurrence_id], references: [id])
+  check_ins  CheckIn[]
+
+  @@map("classes")
+}
+
+model ClassRecurrence {
+  id           String      @id @default(uuid())
+  days_of_week DayOfWeek[]
+  start_date   DateTime
+  end_date     DateTime?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  // Relations
+  classes Class[]
+
+  @@map("class_recurrences")
+}
+
+model CheckIn {
+  id            String   @id @default(uuid())
+  user_id       String
+  class_id      String
+  check_in_time DateTime @default(now())
+  notes         String?
+
+  // Relations
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [class_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, class_id])
+  @@map("check_ins")
+}
+
+model StudentProgress {
+  id                String    @id @default(uuid())
+  user_id           String
+  belt_rank_id      String
+  classes_completed Int       @default(0)
+  promoted          Boolean   @default(false)
+  promotion_date    DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  belt_rank BeltRank @relation(fields: [belt_rank_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, belt_rank_id])
+  @@map("student_progress")
+}
