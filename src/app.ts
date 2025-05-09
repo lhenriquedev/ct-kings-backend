@@ -26,7 +26,7 @@ app.register(fastifyJwt, {
 
 app.register(fastifyCookie)
 app.register(fastifyCors, {
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://ct-kings-web.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Authorization', 'Content-Type'],
   credentials: true,
